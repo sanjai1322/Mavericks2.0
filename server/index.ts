@@ -6,6 +6,8 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import Database from "@replit/database";
 import fetch from "node-fetch";
+// @ts-ignore
+import { config } from './config.js';
 
 const app = express();
 
@@ -61,7 +63,7 @@ const authenticateToken = (req: any, res: any, next: any) => {
     return res.status(401).json({ message: 'Access token required' });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key', (err: any, user: any) => {
+  jwt.verify(token, config.JWT_SECRET, (err: any, user: any) => {
     if (err) {
       return res.status(403).json({ message: 'Invalid or expired token' });
     }
@@ -72,18 +74,19 @@ const authenticateToken = (req: any, res: any, next: any) => {
 
 // Profile Agent
 class ProfileAgent {
-  private apiKey: string | undefined;
+  private apiKey: string;
   private apiUrl: string;
 
   constructor() {
-    this.apiKey = process.env.OPENROUTER_KEY;
-    this.apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
+    this.apiKey = config.OPENROUTER_API_KEY;
+    this.apiUrl = config.OPENROUTER_URL;
   }
 
   async extractSkillsFromBio(bio: string) {
     try {
-      if (!this.apiKey) {
-        throw new Error('OPENROUTER_KEY environment variable is required');
+      if (!this.apiKey || this.apiKey === 'your-api-key-here') {
+        console.warn('OpenRouter API key not configured. Please update server/config.js with your API key.');
+        return []; // Return empty skills array instead of throwing error
       }
 
       const prompt = `
@@ -163,7 +166,7 @@ const profileAgent = new ProfileAgent();
 
 // Generate JWT token
 const generateToken = (userId: string) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET || 'your-secret-key', { 
+  return jwt.sign({ userId }, config.JWT_SECRET, { 
     expiresIn: '7d' 
   });
 };
