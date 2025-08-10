@@ -1,11 +1,24 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import cors from "cors";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
+import Database from "@replit/database";
+import fetch from "node-fetch";
 
 const app = express();
+
+// CORS middleware
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5000',
+  credentials: true
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -34,6 +47,254 @@ app.use((req, res, next) => {
   });
 
   next();
+});
+
+// Database instance
+const db = new Database();
+
+// JWT middleware
+const authenticateToken = (req: any, res: any, next: any) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ message: 'Access token required' });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key', (err: any, user: any) => {
+    if (err) {
+      return res.status(403).json({ message: 'Invalid or expired token' });
+    }
+    req.user = user;
+    next();
+  });
+};
+
+// Profile Agent
+class ProfileAgent {
+  private apiKey: string | undefined;
+  private apiUrl: string;
+
+  constructor() {
+    this.apiKey = process.env.OPENROUTER_KEY;
+    this.apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
+  }
+
+  async extractSkillsFromBio(bio: string) {
+    try {
+      if (!this.apiKey) {
+        throw new Error('OPENROUTER_KEY environment variable is required');
+      }
+
+      const prompt = `
+You are a professional skill extraction AI. Analyze the following user bio and extract relevant programming and technical skills. Return ONLY a JSON array of skill objects with this exact format:
+
+[
+  {"name": "JavaScript", "level": "Intermediate", "category": "Programming Language"},
+  {"name": "React", "level": "Advanced", "category": "Frontend Framework"},
+  {"name": "Node.js", "level": "Beginner", "category": "Backend Technology"}
+]
+
+Categories should be one of: "Programming Language", "Frontend Framework", "Backend Technology", "Database", "DevOps", "Mobile Development", "Data Science", "AI/ML", "Cloud Platform", "Tool/Software"
+
+Levels should be: "Beginner", "Intermediate", "Advanced", "Expert"
+
+Bio to analyze:
+"${bio}"
+
+Return only the JSON array, no other text.
+`;
+
+      const response = await fetch(this.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'meta-llama/llama-3.1-8b-instruct:free',
+          messages: [
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          max_tokens: 1000,
+          temperature: 0.3
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json() as any;
+      const content = data.choices[0]?.message?.content;
+
+      if (!content) {
+        throw new Error('No content received from OpenRouter API');
+      }
+
+      try {
+        const skills = JSON.parse(content.trim());
+        
+        if (!Array.isArray(skills)) {
+          throw new Error('Response is not an array');
+        }
+
+        const validatedSkills = skills.filter(skill => 
+          skill.name && skill.level && skill.category
+        );
+
+        return validatedSkills;
+      } catch (parseError) {
+        console.error('Failed to parse AI response:', content);
+        return [];
+      }
+
+    } catch (error) {
+      console.error('Skill extraction error:', error);
+      return [];
+    }
+  }
+}
+
+const profileAgent = new ProfileAgent();
+
+// Generate JWT token
+const generateToken = (userId: string) => {
+  return jwt.sign({ userId }, process.env.JWT_SECRET || 'your-secret-key', { 
+    expiresIn: '7d' 
+  });
+};
+
+// New Auth Routes
+app.post("/api/auth/register", async (req, res) => {
+  try {
+    const { username, email, password, name } = req.body;
+
+    const existingUser = await db.get(`user:${email}`);
+    if (existingUser) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
+
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    const userId = Date.now().toString();
+    const user = {
+      id: userId,
+      username,
+      email,
+      name,
+      password: hashedPassword,
+      level: 1,
+      xp: 0,
+      skills: [],
+      createdAt: new Date().toISOString()
+    };
+
+    await db.set(`user:${email}`, user);
+    await db.set(`user_id:${userId}`, user);
+
+    const token = generateToken(userId);
+    const { password: _, ...userWithoutPassword } = user;
+    
+    res.status(201).json({
+      user: userWithoutPassword,
+      token
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ message: 'Registration failed' });
+  }
+});
+
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await db.get(`user:${email}`) as any;
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    const token = generateToken(user.id);
+    const { password: _, ...userWithoutPassword } = user;
+    
+    res.json({
+      user: userWithoutPassword,
+      token
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Login failed' });
+  }
+});
+
+// New Profile Routes
+app.post("/api/profile/update", authenticateToken, async (req: any, res) => {
+  try {
+    const { bio } = req.body;
+    const userId = req.user.userId;
+
+    if (!bio) {
+      return res.status(400).json({ message: 'Bio is required' });
+    }
+
+    const extractedSkills = await profileAgent.extractSkillsFromBio(bio);
+
+    const user = await db.get(`user_id:${userId}`) as any;
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const updatedUser = {
+      ...user,
+      bio,
+      skills: extractedSkills,
+      updatedAt: new Date().toISOString()
+    };
+
+    await db.set(`user:${user.email}`, updatedUser);
+    await db.set(`user_id:${userId}`, updatedUser);
+
+    const { password: _, ...userWithoutPassword } = updatedUser;
+    
+    res.json({
+      user: userWithoutPassword,
+      extractedSkills
+    });
+  } catch (error) {
+    console.error('Profile update error:', error);
+    res.status(500).json({ 
+      message: 'Profile update failed',
+      error: (error as Error).message 
+    });
+  }
+});
+
+app.get("/api/profile", authenticateToken, async (req: any, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const user = await db.get(`user_id:${userId}`) as any;
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const { password: _, ...userWithoutPassword } = user;
+    
+    res.json({ user: userWithoutPassword });
+  } catch (error) {
+    console.error('Get profile error:', error);
+    res.status(500).json({ message: 'Failed to get profile' });
+  }
 });
 
 (async () => {

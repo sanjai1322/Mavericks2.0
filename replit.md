@@ -23,20 +23,26 @@ Preferred communication style: Simple, everyday language.
 - **Runtime**: Node.js with Express.js framework
 - **Language**: TypeScript with ES modules
 - **API Design**: RESTful endpoints with proper HTTP status codes and error handling
-- **Database ORM**: Drizzle ORM for type-safe database operations
-- **Schema Validation**: Shared Zod schemas between frontend and backend
+- **Database**: Replit Database for data persistence and user management
+- **Authentication**: JWT-based authentication with bcrypt password hashing
+- **AI Integration**: OpenRouter API integration for intelligent skill extraction
+- **CORS**: Enabled for cross-origin requests with credentials support
+- **Middleware**: Custom authentication, request logging, and error handling
 - **Development**: Hot reload with custom middleware logging
 
 ### Data Storage Architecture
-- **Database**: PostgreSQL with Neon Database hosting
-- **Schema Design**: Modular table structure with users, challenges, learning resources, hackathons, and progress tracking
-- **Migrations**: Drizzle Kit for database schema migrations
-- **Connection**: @neondatabase/serverless for edge-compatible database connections
+- **Database**: Replit Database for development and prototyping
+- **Structure**: Key-value storage with user indexing by email and ID
+- **User Management**: Comprehensive user profiles with bio, skills, level, and XP tracking
+- **AI-Enhanced**: Automated skill extraction and profile analysis using OpenRouter AI
+- **Authentication**: Secure password hashing with bcrypt and JWT token management
 
 ### Authentication and Authorization
-- **Authentication**: Email/password based authentication with user session management
-- **Password Security**: Plain text storage (should be upgraded to hashed passwords in production)
-- **User Management**: Complete CRUD operations for user profiles with skills tracking and XP systems
+- **Authentication**: JWT-based authentication with secure token generation
+- **Password Security**: Bcrypt hashing for secure password storage
+- **User Management**: Complete CRUD operations for user profiles with AI-powered skills tracking
+- **Profile Features**: Bio analysis with automatic skill extraction using OpenRouter AI
+- **Token Management**: 7-day expiration with Bearer token authentication
 
 ### Component Architecture
 - **Design System**: Consistent component library with Button, Card, Modal, and form components
@@ -53,8 +59,8 @@ Preferred communication style: Simple, everyday language.
 ## External Dependencies
 
 ### Database Services
-- **Neon Database**: PostgreSQL hosting service for production database
-- **Drizzle ORM**: Database toolkit with PostgreSQL adapter for type-safe queries
+- **Replit Database**: Key-value database for development and user data storage
+- **OpenRouter AI**: AI-powered skill extraction and profile analysis service
 
 ### UI and Design Libraries
 - **Radix UI**: Unstyled, accessible UI primitives for building design system
@@ -72,7 +78,10 @@ Preferred communication style: Simple, everyday language.
 - **Express.js**: Web framework for Node.js backend
 - **Wouter**: Minimalist routing library for React applications
 - **Date-fns**: Modern JavaScript date utility library
-- **Nanoid**: URL-safe unique string ID generator
+- **JWT**: JSON Web Token implementation for authentication
+- **Bcrypt**: Password hashing library for security
+- **CORS**: Cross-Origin Resource Sharing middleware
+- **Node-fetch**: HTTP client for AI API integration
 
 ### Fonts and Assets
 - **Google Fonts**: Poppins font family for consistent typography
