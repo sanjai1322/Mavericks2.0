@@ -173,10 +173,11 @@ app.post("/api/auth/register", async (req, res) => {
   try {
     const { username, email, password, name } = req.body;
 
-    const existingUser = await db.get(`user:${email}`);
-    console.log('Checking existing user:', email, existingUser ? 'EXISTS' : 'NOT FOUND');
+    const existingUserResult = await db.get(`user:${email}`);
+    const existingUser = existingUserResult?.value || existingUserResult;
+
     
-    // Re-enable user existence check after testing
+    // Check if user already exists
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
@@ -217,7 +218,9 @@ app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await db.get(`user:${email}`) as any;
+    const userResult = await db.get(`user:${email}`) as any;
+    const user = userResult?.value || userResult;
+    
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -262,7 +265,8 @@ app.post("/api/profile/update", authenticateToken, async (req: any, res) => {
 
     const extractedSkills = await profileAgent.extractSkillsFromBio(bio);
 
-    const user = await db.get(`user_id:${userId}`) as any;
+    const userResult = await db.get(`user_id:${userId}`) as any;
+    const user = userResult?.value || userResult;
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -296,7 +300,8 @@ app.get("/api/profile", authenticateToken, async (req: any, res) => {
   try {
     const userId = req.user.userId;
 
-    const user = await db.get(`user_id:${userId}`) as any;
+    const userResult = await db.get(`user_id:${userId}`) as any;
+    const user = userResult?.value || userResult;
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
