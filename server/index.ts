@@ -174,6 +174,9 @@ app.post("/api/auth/register", async (req, res) => {
     const { username, email, password, name } = req.body;
 
     const existingUser = await db.get(`user:${email}`);
+    console.log('Checking existing user:', email, existingUser ? 'EXISTS' : 'NOT FOUND');
+    
+    // Re-enable user existence check after testing
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
@@ -219,7 +222,17 @@ app.post("/api/auth/login", async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    // Handle both hashed and plain text passwords for backward compatibility
+    let isPasswordValid = false;
+    
+    try {
+      // Try bcrypt comparison first (for new hashed passwords)
+      isPasswordValid = await bcrypt.compare(password, user.password);
+    } catch (error) {
+      // If bcrypt fails, try plain text comparison (for old users)
+      isPasswordValid = password === user.password;
+    }
+    
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -294,6 +307,51 @@ app.get("/api/profile", authenticateToken, async (req: any, res) => {
   } catch (error) {
     console.error('Get profile error:', error);
     res.status(500).json({ message: 'Failed to get profile' });
+  }
+});
+
+// Clear database endpoint (for development only)
+app.delete('/api/admin/clear-users', async (req, res) => {
+  try {
+    // Force clear specific known user emails
+    const emails = ['fresh@example.com', 'sanjai131418@gmail.com', 'test@example.com', 'sanjaifresh@gmail.com', 'newtest@example.com', 'test2024@example.com'];
+    const deletedKeys = [];
+    
+    for (const email of emails) {
+      try {
+        await db.delete(`user:${email}`);
+        deletedKeys.push(`user:${email}`);
+        console.log(`Force deleted user:${email}`);
+      } catch (e) { /* ignore */ }
+      
+      try {
+        await db.delete(email);
+        deletedKeys.push(email);
+        console.log(`Force deleted ${email}`);
+      } catch (e) { /* ignore */ }
+    }
+    
+    // Try to delete user_id keys
+    for (let i = 1; i < 100; i++) {
+      try {
+        const key = `user_id:${i}`;
+        await db.delete(key);
+        deletedKeys.push(key);
+        console.log(`Deleted ${key}`);
+      } catch (e) { /* ignore */ }
+    }
+    
+    console.log('Force database clear completed');
+    
+    res.json({ 
+      message: 'Database force cleared successfully', 
+      deletedKeys: deletedKeys.length,
+      keys: deletedKeys
+    });
+    
+  } catch (error) {
+    console.error('Error clearing database:', error);
+    res.status(500).json({ message: 'Failed to clear database', error: (error as Error).message });
   }
 });
 
