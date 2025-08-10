@@ -1,8 +1,11 @@
 import { motion } from "framer-motion";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import Button from "@/components/Button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,13 +20,35 @@ const loginSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>;
 
 export default function Login() {
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema)
   });
 
+  const loginMutation = useMutation({
+    mutationFn: async (data: LoginForm) => {
+      console.log("Login attempt:", data);
+      return apiRequest("POST", "/api/auth/login", { email: data.email, password: data.password });
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Login successful!",
+        description: "Welcome back to Mavericks!",
+      });
+      setLocation("/dashboard");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Login failed",
+        description: error.message || "Invalid credentials. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: LoginForm) => {
-    console.log("Login attempt:", data);
-    // Handle login logic here
+    loginMutation.mutate(data);
   };
 
   return (
@@ -83,8 +108,13 @@ export default function Login() {
                 </Link>
               </div>
               
-              <Button type="submit" variant="primary" className="w-full">
-                Sign In
+              <Button 
+                type="submit" 
+                variant="primary" 
+                className="w-full"
+                disabled={loginMutation.isPending}
+              >
+                {loginMutation.isPending ? "Signing In..." : "Sign In"}
               </Button>
             </form>
             

@@ -1,17 +1,18 @@
 import { motion } from "framer-motion";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { insertUserSchema } from "@shared/schema";
 import Button from "@/components/Button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const registerSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+const registerSchema = insertUserSchema.extend({
   confirmPassword: z.string(),
   terms: z.boolean().refine(val => val === true, "You must agree to the terms")
 }).refine(data => data.password === data.confirmPassword, {
@@ -22,13 +23,36 @@ const registerSchema = z.object({
 type RegisterForm = z.infer<typeof registerSchema>;
 
 export default function Register() {
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const { register, handleSubmit, formState: { errors } } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema)
   });
 
+  const registerMutation = useMutation({
+    mutationFn: async (data: RegisterForm) => {
+      console.log("Register attempt:", data);
+      const { confirmPassword, terms, ...userData } = data;
+      return apiRequest("POST", "/api/auth/register", userData);
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Registration successful!",
+        description: "Welcome to Mavericks! You can now sign in.",
+      });
+      setLocation("/login");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Registration failed",
+        description: error.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: RegisterForm) => {
-    console.log("Register attempt:", data);
-    // Handle registration logic here
+    registerMutation.mutate(data);
   };
 
   return (
@@ -56,6 +80,19 @@ export default function Register() {
                 />
                 {errors.name && (
                   <p className="text-destructive text-sm mt-1">{errors.name.message}</p>
+                )}
+              </div>
+              
+              <div>
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  placeholder="Choose a username"
+                  className="bg-primary border-secondary focus:border-accent"
+                  {...register("username")}
+                />
+                {errors.username && (
+                  <p className="text-destructive text-sm mt-1">{errors.username.message}</p>
                 )}
               </div>
               
@@ -117,8 +154,13 @@ export default function Register() {
                 )}
               </div>
               
-              <Button type="submit" variant="primary" className="w-full">
-                Create Account
+              <Button 
+                type="submit" 
+                variant="primary" 
+                className="w-full"
+                disabled={registerMutation.isPending}
+              >
+                {registerMutation.isPending ? "Creating Account..." : "Create Account"}
               </Button>
             </form>
             
