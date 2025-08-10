@@ -1,0 +1,53 @@
+Create a React + Vite + TailwindCSS project for the Mavericks Coding Platform with the following UI/UX:
+
+General:
+- Use Poppins font from Google Fonts for all text.
+- Color scheme: Dark purple (#1E003E) background, yellow (#FFD700) accents, white text.
+- Responsive design for desktop and mobile.
+- Use Framer Motion for subtle animations on page transitions and elements.
+- Organize components inside /src/components, pages in /src/pages, and styles in /src/styles.
+
+Pages:
+1. Landing Page
+   - Full-screen hero section with platform name "Mavericks Coding Platform" and tagline "Learn. Compete. Grow."
+   - Call-to-action buttons: "Get Started" and "Login".
+   - Animated background with floating code snippets (Framer Motion).
+   - Section showing platform features in 3 cards: AI-Powered Skill Analysis, Code Challenges, Hackathons.
+
+2. Login & Register Pages
+   - Minimal form design with purple card background and yellow button.
+   - Toggle link to switch between Login and Register.
+
+3. Dashboard Page
+   - Sidebar navigation (Profile, Assessments, Learning Path, Hackathons, Leaderboard).
+   - Main content area showing:
+     - Profile card with avatar, name, skill list.
+     - Progress tracker stepper (Profile → Assessment → Learning Path → Hackathon).
+     - Quick actions buttons.
+
+4. Assessments Page
+   - Table of challenges with title, difficulty, status.
+   - “Start” button that opens a coding editor modal (simple textarea now, will connect to Judge0 later).
+
+5. Learning Path Page
+   - List of recommended resources in cards with title, description, and “View” link.
+   - Animated staggered entry for cards.
+
+6. Hackathons Page
+   - List of ongoing and upcoming hackathons with “Join” button.
+   - Joined hackathons section with submission button.
+
+7. Leaderboard Page
+   - Table with rank, username, score, badges.
+
+Components:
+- Navbar with logo and user menu.
+- Sidebar with icons and links.
+- Progress stepper (Framer Motion animations when progressing).
+- Card component for resources, features, and hackathons.
+- Button component with hover animation (scale up slightly).
+- Modal component for coding editor.
+
+Extra:
+- Keep all text, buttons, and animations clean and minimal — no clutter.
+- Ensure mobile-friendly sidebar (collapsible).
