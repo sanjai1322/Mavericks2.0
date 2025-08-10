@@ -115,7 +115,7 @@ Return only the JSON array, no other text.
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'meta-llama/llama-3.1-8b-instruct:free',
+          model: 'gpt-3.5-turbo',
           messages: [
             {
               role: 'user',
@@ -128,7 +128,14 @@ Return only the JSON array, no other text.
       });
 
       if (!response.ok) {
-        throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('OpenRouter API Error Details:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText,
+          headers: Object.fromEntries(response.headers.entries())
+        });
+        throw new Error(`OpenRouter API error: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       const data = await response.json() as any;
