@@ -1,0 +1,116 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(270, 100%, 12%);
+  --foreground: hsl(0, 0%, 100%);
+  --card: hsl(260, 57%, 20%);
+  --card-foreground: hsl(0, 0%, 100%);
+  --popover: hsl(260, 57%, 20%);
+  --popover-foreground: hsl(0, 0%, 100%);
+  --primary: hsl(270, 100%, 12%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(260, 57%, 20%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --muted: hsl(260, 57%, 15%);
+  --muted-foreground: hsl(0, 0%, 70%);
+  --accent: hsl(51, 100%, 50%);
+  --accent-foreground: hsl(270, 100%, 12%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --border: hsl(260, 57%, 20%);
+  --input: hsl(260, 57%, 15%);
+  --ring: hsl(51, 100%, 50%);
+  --chart-1: hsl(51, 100%, 50%);
+  --chart-2: hsl(160, 100%, 36%);
+  --chart-3: hsl(42, 93%, 56%);
+  --chart-4: hsl(147, 78%, 42%);
+  --chart-5: hsl(341, 75%, 51%);
+  --sidebar: hsl(260, 57%, 20%);
+  --sidebar-foreground: hsl(0, 0%, 100%);
+  --sidebar-primary: hsl(51, 100%, 50%);
+  --sidebar-primary-foreground: hsl(270, 100%, 12%);
+  --sidebar-accent: hsl(260, 57%, 15%);
+  --sidebar-accent-foreground: hsl(51, 100%, 50%);
+  --sidebar-border: hsl(260, 57%, 20%);
+  --sidebar-ring: hsl(51, 100%, 50%);
+  --font-sans: 'Poppins', sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: hsl(270, 100%, 12%);
+  --foreground: hsl(0, 0%, 100%);
+  --card: hsl(260, 57%, 20%);
+  --card-foreground: hsl(0, 0%, 100%);
+  --popover: hsl(260, 57%, 20%);
+  --popover-foreground: hsl(0, 0%, 100%);
+  --primary: hsl(270, 100%, 12%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(260, 57%, 20%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --muted: hsl(260, 57%, 15%);
+  --muted-foreground: hsl(0, 0%, 70%);
+  --accent: hsl(51, 100%, 50%);
+  --accent-foreground: hsl(270, 100%, 12%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --border: hsl(260, 57%, 20%);
+  --input: hsl(260, 57%, 15%);
+  --ring: hsl(51, 100%, 50%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-accent text-accent-foreground font-semibold px-6 py-3 rounded-lg hover:bg-accent/90 transition-all duration-300 transform hover:scale-105 flex items-center justify-center;
+  }
+  
+  .btn-secondary {
+    @apply bg-transparent text-white border-2 border-secondary font-semibold px-6 py-3 rounded-lg hover:border-accent hover:text-accent transition-all duration-300 transform hover:scale-105 flex items-center justify-center;
+  }
+
+  .floating-code {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.animate-slideIn {
+  animation: slideIn 0.3s ease-out;
+}
